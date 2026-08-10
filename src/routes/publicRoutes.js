@@ -9,5 +9,6 @@ router.get('/building-types', catalogController.getBuildingTypes);
 router.get('/partners', catalogController.getPartners);
 router.get('/testimonials', catalogController.getTestimonials);
 router.get('/projects/public', catalogController.getPublicProjects);
+router.get('/stats', catalogController.getPublicStats);
 
 module.exports = router;

@@ -4,6 +4,8 @@ const Partner = require('../models/Partner');
 const Testimonial = require('../models/Testimonial');
 const Project = require('../models/Project');
 const ProjectMedia = require('../models/ProjectMedia');
+const QuoteRequest = require('../models/QuoteRequest');
+const Appointment = require('../models/Appointment');
 
 const getPublishedServices = async () => {
   return await Service.find({ isPublished: true }).sort({ order: 1 }).lean();
@@ -65,6 +67,19 @@ const getPublicProjects = async (page = 1, limit = 10, category = null) => {
   };
 };
 
+const getPublicStats = async () => {
+  const [completedQuotes, completedAppointments] = await Promise.all([
+    QuoteRequest.countDocuments({ status: { $in: ['COMPLETED', 'LIVRE', 'TERMINATED', 'TERMINE'] } }),
+    Appointment.countDocuments({ status: { $in: ['COMPLETED', 'HONORE', 'TERMINATED', 'TERMINE'] } }),
+  ]);
+
+  return {
+    deliveredProjects: completedQuotes + completedAppointments,
+    conformityRate: 100,
+    avgQuoteTimeHours: 24,
+  };
+};
+
 module.exports = {
   getPublishedServices,
   getServiceBySlug,
@@ -73,4 +88,5 @@ module.exports = {
   getPublishedPartners,
   getPublishedTestimonials,
   getPublicProjects,
+  getPublicStats,
 };
