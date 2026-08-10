@@ -19,6 +19,19 @@ app.use(sanitizeNoSql);
 
 app.use('/api/', globalLimiter);
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Bienvenue sur l'API REST Baticlean - Service Opérationnel",
+    version: '1.0.0',
+    health: '/health',
+  });
+});
+
+app.head('/', (req, res) => {
+  res.status(200).end();
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'UP',
