@@ -21,7 +21,7 @@
   "author": "Baticlean Dev Team",
   "license": "ISC",
   "dependencies": {
-    "@getbrevo/brevo": "^2.2.0",
+    "@getbrevo/brevo": "^6.0.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
     "cookie-parser": "^1.4.6",
