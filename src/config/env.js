@@ -5,7 +5,7 @@ dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform((val) => parseInt(val, 10)).default('5000'),
+  PORT: z.coerce.number().default(5000),
   MONGODB_URI: z.string().min(1, { message: "L'URI MongoDB est obligatoire." }),
   JWT_SECRET: z.string().min(32, { message: "Le secret JWT doit contenir au moins 32 caractères." }),
   JWT_REFRESH_SECRET: z.string().min(32, { message: "Le secret JWT Refresh doit contenir au moins 32 caractères." }),
@@ -17,9 +17,9 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional().default('TODO_CONFIG_CLOUDINARY_API_KEY'),
   CLOUDINARY_API_SECRET: z.string().optional().default('TODO_CONFIG_CLOUDINARY_API_SECRET'),
   BREVO_API_KEY: z.string().optional().default('TODO_CONFIG_BREVO_API_KEY'),
-  SENDER_EMAIL: z.string().email().optional().default('contact@baticlean.com'),
+  SENDER_EMAIL: z.string().optional().default('baticlean225@gmail.com'),
   SENDER_NAME: z.string().optional().default('Baticlean Official'),
-  ADMIN_NOTIFICATION_EMAIL: z.string().email().optional().default('admin@baticlean.com'),
+  ADMIN_NOTIFICATION_EMAIL: z.string().optional().default('baticlean225@gmail.com'),
 });
 
 const parseEnv = () => {
