@@ -23,23 +23,24 @@ const projectSchema = new mongoose.Schema(
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
-      required: true,
+      required: false,
       index: true,
     },
     buildingType: {
       type: String,
-      enum: Object.values(BUILDING_TYPES),
       required: true,
     },
-    city: { type: String, required: true, trim: true },
-    commune: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true, default: 'Abidjan' },
+    commune: { type: String, required: false, trim: true, default: 'Abidjan' },
     neighborhood: { type: String, trim: true },
-    address: { type: String, required: true, trim: true },
+    address: { type: String, required: false, trim: true, default: 'Abidjan' },
 
     surface: { type: Number },
     surfaceUnit: { type: String, default: 'm²' },
 
     description: { type: String, trim: true },
+    beforeImage: { type: String, trim: true },
+    afterImage: { type: String, trim: true },
 
     plannedStartDate: { type: Date },
     startDate: { type: Date },
@@ -66,7 +67,7 @@ const projectSchema = new mongoose.Schema(
 
     isPublishedPublic: {
       type: Boolean,
-      default: false,
+      default: true,
       index: true,
     },
   },

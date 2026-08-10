@@ -20,4 +20,16 @@ router.patch(
 );
 router.post('/quote-requests/:id/convert-project', adminController.convertToProject);
 
+// Express routes for Projects management
+router.get('/projects', adminController.getProjects);
+router.post('/projects', adminController.createProject);
+router.patch('/projects/:id/toggle-publish', adminController.toggleProjectPublication);
+router.delete('/projects/:id', adminController.deleteProject);
+
+// Express routes for Partners management
+router.get('/partners', adminController.getPartners);
+router.post('/partners', adminController.createPartner);
+router.patch('/partners/:id/toggle-publish', adminController.togglePartnerPublication);
+router.delete('/partners/:id', adminController.deletePartner);
+
 module.exports = router;

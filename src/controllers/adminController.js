@@ -44,9 +44,89 @@ const convertToProject = async (req, res, next) => {
   }
 };
 
+const getProjects = async (req, res, next) => {
+  try {
+    const projects = await adminService.getAllAdminProjects();
+    return sendSuccess(res, projects);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createProject = async (req, res, next) => {
+  try {
+    const project = await adminService.createAdminProject(req.body);
+    return sendSuccess(res, project, 201);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const toggleProjectPublication = async (req, res, next) => {
+  try {
+    const project = await adminService.toggleProjectPublication(req.params.id);
+    return sendSuccess(res, project);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteProject = async (req, res, next) => {
+  try {
+    await adminService.deleteAdminProject(req.params.id);
+    return sendSuccess(res, { message: 'Projet supprimé avec succès.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getPartners = async (req, res, next) => {
+  try {
+    const partners = await adminService.getAllAdminPartners();
+    return sendSuccess(res, partners);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createPartner = async (req, res, next) => {
+  try {
+    const partner = await adminService.createAdminPartner(req.body);
+    return sendSuccess(res, partner, 201);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const togglePartnerPublication = async (req, res, next) => {
+  try {
+    const partner = await adminService.togglePartnerPublication(req.params.id);
+    return sendSuccess(res, partner);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deletePartner = async (req, res, next) => {
+  try {
+    await adminService.deleteAdminPartner(req.params.id);
+    return sendSuccess(res, { message: 'Partenaire supprimé avec succès.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getQuoteRequests,
   updateQuoteRequestStatus,
   convertToProject,
+  getProjects,
+  createProject,
+  toggleProjectPublication,
+  deleteProject,
+  getPartners,
+  createPartner,
+  togglePartnerPublication,
+  deletePartner,
 };

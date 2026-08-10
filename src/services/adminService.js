@@ -2,6 +2,7 @@ const QuoteRequest = require('../models/QuoteRequest');
 const Appointment = require('../models/Appointment');
 const Quote = require('../models/Quote');
 const Project = require('../models/Project');
+const Partner = require('../models/Partner');
 const Client = require('../models/Client');
 const AuditLog = require('../models/AuditLog');
 const { generateReference } = require('../utils/referenceGenerator');
@@ -114,6 +115,7 @@ const convertToProject = async (quoteRequestId, userId) => {
     surfaceUnit: request.surfaceUnit,
     description: request.description,
     status: 'PLANNED',
+    isPublishedPublic: true,
   });
 
   request.status = 'SCHEDULED';
@@ -130,9 +132,86 @@ const convertToProject = async (quoteRequestId, userId) => {
   return project;
 };
 
+// Projects CRUD
+const getAllAdminProjects = async () => {
+  return await Project.find().sort({ createdAt: -1 }).lean();
+};
+
+const createAdminProject = async (projectData) => {
+  const projectCount = await Project.countDocuments();
+  const reference = generateReference('PRJ', projectCount + 1);
+  const slug = `chantier-${reference.toLowerCase()}-${Date.now().toString().slice(-4)}`;
+
+  return await Project.create({
+    reference,
+    slug,
+    name: projectData.name,
+    buildingType: projectData.buildingType || 'Résidentiel',
+    city: projectData.city || 'Abidjan',
+    commune: projectData.commune || 'Abidjan',
+    address: projectData.address || 'Abidjan',
+    surface: projectData.surface || 0,
+    description: projectData.description || '',
+    beforeImage: projectData.beforeImage || '',
+    afterImage: projectData.afterImage || '',
+    isPublishedPublic: projectData.isPublishedPublic !== false,
+    status: 'COMPLETED',
+  });
+};
+
+const toggleProjectPublication = async (projectId) => {
+  const project = await Project.findById(projectId);
+  if (!project) throw new AppError('Projet introuvable', 404);
+  project.isPublishedPublic = !project.isPublishedPublic;
+  await project.save();
+  return project;
+};
+
+const deleteAdminProject = async (projectId) => {
+  return await Project.findByIdAndDelete(projectId);
+};
+
+// Partners CRUD
+const getAllAdminPartners = async () => {
+  return await Partner.find().sort({ createdAt: -1 }).lean();
+};
+
+const createAdminPartner = async (partnerData) => {
+  return await Partner.create({
+    name: partnerData.name,
+    logoUrl: partnerData.logoUrl || '',
+    category: partnerData.category || 'Promoteur / BTP',
+    description: partnerData.description || '',
+    websiteUrl: partnerData.websiteUrl || '',
+    contactPhone: partnerData.contactPhone || '',
+    contactEmail: partnerData.contactEmail || '',
+    isPublished: partnerData.isPublished !== false,
+  });
+};
+
+const togglePartnerPublication = async (partnerId) => {
+  const partner = await Partner.findById(partnerId);
+  if (!partner) throw new AppError('Partenaire introuvable', 404);
+  partner.isPublished = !partner.isPublished;
+  await partner.save();
+  return partner;
+};
+
+const deleteAdminPartner = async (partnerId) => {
+  return await Partner.findByIdAndDelete(partnerId);
+};
+
 module.exports = {
   getDashboardStats,
   getQuoteRequests,
   updateQuoteRequestStatus,
   convertToProject,
+  getAllAdminProjects,
+  createAdminProject,
+  toggleProjectPublication,
+  deleteAdminProject,
+  getAllAdminPartners,
+  createAdminPartner,
+  togglePartnerPublication,
+  deleteAdminPartner,
 };

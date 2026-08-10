@@ -9,15 +9,28 @@ const partnerSchema = new mongoose.Schema(
     },
     logoUrl: {
       type: String,
-      required: [true, 'Le logo du partenaire est obligatoire.'],
+      trim: true,
+      default: '',
     },
     description: {
       type: String,
       trim: true,
+      default: '',
     },
     websiteUrl: {
       type: String,
       trim: true,
+      default: '',
+    },
+    contactPhone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    contactEmail: {
+      type: String,
+      trim: true,
+      default: '',
     },
     category: {
       type: String,
