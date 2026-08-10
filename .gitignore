@@ -1,0 +1,56 @@
+# Dependances
+node_modules/
+/node_modules
+
+# Fichiers d'environnement et secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Fichiers de logs et debogage
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pino.log
+
+# Repertoires temporaires et uploads
+uploads/
+tmp/
+temp/
+.cache/
+
+# Fichiers du systeme d'exploitation
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Fichiers d'environnement IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.gemini/
+
+# Fichiers de couverture de tests
+coverage/
+.nyc_output/
+
+# Spécifications et instructions projet
+Agent.md
+Agent*.md
+CAHIER DES CHARGES OFFICIEL.md
+Cahier des Charges Baticlean.pdf
+*.pdf
+
