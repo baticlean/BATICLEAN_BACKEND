@@ -132,8 +132,19 @@ const respondToPartnerRequest = async (id, status, responseNotes) => {
   return request;
 };
 
+const deletePartnerRequest = async (id) => {
+  const deleted = await PartnerRequest.findByIdAndDelete(id);
+  if (!deleted) {
+    throw new AppError('Demande de partenariat introuvable.', 404);
+  }
+  emitEvent('partner_request_deleted', { id });
+  emitEvent('data_updated', { type: 'PARTNER_REQUEST' });
+  return deleted;
+};
+
 module.exports = {
   createPartnerRequest,
   getPartnerRequests,
   respondToPartnerRequest,
+  deletePartnerRequest,
 };

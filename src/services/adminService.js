@@ -69,7 +69,6 @@ const getQuoteRequests = async ({ page = 1, limit = 50, status, search }) => {
     QuoteRequest.countDocuments(query),
   ]);
 
-  // Formater pour que clientId contactName/phone/email soient extraits facilement si présents
   const formattedRequests = requests.map((r) => ({
     ...r,
     firstName: r.firstName || r.clientId?.contactName?.split(' ')[0] || r.clientId?.contactName || 'Client',
@@ -113,6 +112,16 @@ const updateQuoteRequestStatus = async (id, status, internalNotes, userId) => {
   emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
 
   return request;
+};
+
+const deleteQuoteRequest = async (id) => {
+  const deleted = await QuoteRequest.findByIdAndDelete(id);
+  if (!deleted) {
+    throw new AppError('Demande de devis introuvable.', HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESOURCE_NOT_FOUND);
+  }
+  emitEvent('quote_request_deleted', { id });
+  emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
+  return deleted;
 };
 
 const convertToProject = async (quoteRequestId, userId) => {
@@ -256,6 +265,7 @@ module.exports = {
   getDashboardStats,
   getQuoteRequests,
   updateQuoteRequestStatus,
+  deleteQuoteRequest,
   convertToProject,
   getAllAdminProjects,
   createAdminProject,

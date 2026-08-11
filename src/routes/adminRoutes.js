@@ -19,6 +19,7 @@ router.patch(
   validate(updateQuoteRequestStatusSchema),
   adminController.updateQuoteRequestStatus
 );
+router.delete('/quote-requests/:id', adminController.deleteQuoteRequest);
 router.post('/quote-requests/:id/convert-project', adminController.convertToProject);
 
 // Express routes for Projects management
@@ -36,6 +37,7 @@ router.delete('/partners/:id', adminController.deletePartner);
 // Express routes for Partner Requests management
 router.get('/partner-requests', partnerRequestController.getPartnerRequests);
 router.patch('/partner-requests/:id/respond', partnerRequestController.respondToPartnerRequest);
+router.delete('/partner-requests/:id', partnerRequestController.deletePartnerRequest);
 
 // Express route for Hero Media Settings
 router.put('/hero-media', adminController.updateHeroMedia);

@@ -29,8 +29,18 @@ const respondToPartnerRequest = async (req, res, next) => {
   }
 };
 
+const deletePartnerRequest = async (req, res, next) => {
+  try {
+    await partnerRequestService.deletePartnerRequest(req.params.id);
+    return sendSuccess(res, { message: 'Demande de partenariat supprimée avec succès.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createPartnerRequest,
   getPartnerRequests,
   respondToPartnerRequest,
+  deletePartnerRequest,
 };

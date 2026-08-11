@@ -36,6 +36,15 @@ const updateQuoteRequestStatus = async (req, res, next) => {
   }
 };
 
+const deleteQuoteRequest = async (req, res, next) => {
+  try {
+    await adminService.deleteQuoteRequest(req.params.id);
+    return sendSuccess(res, { message: 'Demande de devis supprimée avec succès.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const convertToProject = async (req, res, next) => {
   try {
     const project = await adminService.convertToProject(req.params.id, req.user._id);
@@ -130,6 +139,7 @@ module.exports = {
   getDashboardStats,
   getQuoteRequests,
   updateQuoteRequestStatus,
+  deleteQuoteRequest,
   convertToProject,
   getProjects,
   createProject,
