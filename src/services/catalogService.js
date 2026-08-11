@@ -6,6 +6,7 @@ const Project = require('../models/Project');
 const QuoteRequest = require('../models/QuoteRequest');
 const Appointment = require('../models/Appointment');
 const Settings = require('../models/Settings');
+const { emitEvent } = require('../config/socket');
 
 const getPublishedServices = async () => {
   return await Service.find({ isPublishedPublic: true }).sort({ displayOrder: 1 });
@@ -87,6 +88,10 @@ const updateHeroMedia = async (heroMediaData) => {
 
   settings.markModified('heroMedia');
   await settings.save();
+
+  emitEvent('hero_media_updated', settings.heroMedia);
+  emitEvent('data_updated', { type: 'HERO_MEDIA' });
+
   return settings.heroMedia;
 };
 

@@ -5,6 +5,7 @@ const { generateReference } = require('../utils/referenceGenerator');
 const { sendTransactionalEmail } = require('../integrations/brevo');
 const { APPOINTMENT_REASONS } = require('../constants/enums');
 const { generateAppointmentClientEmail, generateAppointmentAdminEmail } = require('../utils/emailTemplates');
+const { emitEvent } = require('../config/socket');
 const AppError = require('../utils/appError');
 const { HTTP_STATUS, ERROR_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
@@ -124,7 +125,11 @@ const createAppointment = async (rawPayload) => {
     notes: payload.notes || '',
   });
 
-  // Modèle d'email client ultra-moderne, sans emoji et sans www.baticlean.ci
+  // Émission d'événement Socket.io temps réel
+  emitEvent('appointment_created', appointment);
+  emitEvent('data_updated', { type: 'APPOINTMENT' });
+
+  // Emails de confirmation
   const htmlClient = generateAppointmentClientEmail({
     contactName: client.contactName,
     reference,
@@ -141,7 +146,6 @@ const createAppointment = async (rawPayload) => {
     htmlContent: htmlClient,
   });
 
-  // Modèle d'email administrateur ultra-moderne sans emoji
   const htmlAdmin = generateAppointmentAdminEmail({
     contactName: client.contactName,
     email: client.email,

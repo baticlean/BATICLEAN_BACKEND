@@ -1,6 +1,7 @@
 const app = require('./app');
 const env = require('./config/env');
 const { connectDB, disconnectDB } = require('./config/db');
+const { initSocket } = require('./config/socket');
 const logger = require('./utils/logger');
 
 let server;
@@ -12,6 +13,9 @@ const startServer = async () => {
     server = app.listen(env.PORT, () => {
       logger.info(`[Baticlean Backend] Serveur démarré en mode ${env.NODE_ENV} sur le port ${env.PORT}`);
     });
+
+    initSocket(server);
+    logger.info('[Baticlean Backend] Service WebSocket (Socket.io) prêt.');
   } catch (error) {
     logger.error(`[Baticlean Backend] Échec de démarrage : ${error.message}`);
     process.exit(1);

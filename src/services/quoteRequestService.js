@@ -5,30 +5,27 @@ const { uploadToCloudinary } = require('../integrations/cloudinary');
 const { sendTransactionalEmail } = require('../integrations/brevo');
 const { CLIENT_TYPES, BUILDING_TYPES, CONSTRUCTION_STATUS, DIRT_LEVELS } = require('../constants/enums');
 const { generateQuoteClientEmail, generateQuoteAdminEmail } = require('../utils/emailTemplates');
+const { emitEvent } = require('../config/socket');
 const env = require('../config/env');
 
 const normalizePayload = (raw) => {
   const contactName = raw.contactName || `${raw.firstName || ''} ${raw.lastName || ''}`.trim() || 'Client Baticlean';
   
-  // RequesterType Enum Check
   let requesterType = raw.requesterType;
   if (!Object.values(CLIENT_TYPES).includes(requesterType)) {
     requesterType = raw.clientType === 'PROFESSIONNEL' ? CLIENT_TYPES.COMPANY : CLIENT_TYPES.INDIVIDUAL;
   }
 
-  // BuildingType Enum Check
   let buildingType = raw.buildingType;
   if (!Object.values(BUILDING_TYPES).includes(buildingType)) {
     buildingType = BUILDING_TYPES.APARTMENT;
   }
 
-  // ConstructionStatus Enum Check
   let constructionStatus = raw.constructionStatus;
   if (!Object.values(CONSTRUCTION_STATUS).includes(constructionStatus)) {
     constructionStatus = CONSTRUCTION_STATUS.FINISHED;
   }
 
-  // DirtLevel Enum Check
   let dirtLevel = raw.dirtLevel;
   if (!Object.values(DIRT_LEVELS).includes(dirtLevel)) {
     dirtLevel = DIRT_LEVELS.HEAVY;
@@ -108,7 +105,17 @@ const createQuoteRequest = async (rawPayload, files = []) => {
     visitRequested: payload.visitRequested || false,
   });
 
-  // Modèle d'email client ultra-moderne, sans emoji et sans www.baticlean.ci
+  // Émission d'événement Socket.io temps réel pour mise à jour immédiate du Backoffice
+  emitEvent('quote_request_created', {
+    ...quoteRequest.toObject(),
+    firstName: payload.firstName || client.contactName?.split(' ')[0],
+    lastName: payload.lastName || '',
+    email: client.email,
+    phone: client.phone,
+  });
+  emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
+
+  // Emails de confirmation
   const htmlClient = generateQuoteClientEmail({
     contactName: client.contactName,
     reference,
@@ -125,7 +132,6 @@ const createQuoteRequest = async (rawPayload, files = []) => {
     htmlContent: htmlClient,
   });
 
-  // Modèle d'email administrateur ultra-moderne sans emoji
   const htmlAdmin = generateQuoteAdminEmail({
     contactName: client.contactName,
     email: client.email,
