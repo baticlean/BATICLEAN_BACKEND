@@ -5,7 +5,45 @@ const { uploadToCloudinary } = require('../integrations/cloudinary');
 const { sendTransactionalEmail } = require('../integrations/brevo');
 const env = require('../config/env');
 
-const createQuoteRequest = async (payload, files = []) => {
+const normalizePayload = (raw) => {
+  const contactName = raw.contactName || `${raw.firstName || ''} ${raw.lastName || ''}`.trim() || 'Client Baticlean';
+  const requesterType = raw.requesterType || (raw.clientType === 'PROFESSIONNEL' ? 'COMPANY' : 'INDIVIDUAL');
+  const city = raw.city || 'Abidjan';
+  const commune = raw.commune || raw.district || 'Abidjan';
+  const neighborhood = raw.neighborhood || raw.locationLandmark || raw.district || 'Abidjan';
+  const address = raw.address || raw.district || raw.city || 'Abidjan';
+  const buildingType = raw.buildingType || 'APARTMENT';
+  const constructionStatus = raw.constructionStatus || 'NEW_BUILD';
+  const dirtLevel = raw.dirtLevel || 'HEAVY';
+  const requestedServices = raw.requestedServices || raw.servicesRequested || ['NETTOYAGE_FIN_CHANTIER'];
+  const description = raw.description || raw.specificNeeds || raw.otherNeeds || '';
+  const preferredDate = raw.preferredDate || raw.desiredInterventionDate || null;
+  const visitRequested = raw.visitRequested ?? raw.requestSiteVisit ?? false;
+  const estimatedSurface = raw.estimatedSurface ? Number(raw.estimatedSurface) : 0;
+  const numberOfLevels = raw.numberOfLevels || raw.numberOfFloors || 1;
+
+  return {
+    ...raw,
+    contactName,
+    requesterType,
+    city,
+    commune,
+    neighborhood,
+    address,
+    buildingType,
+    constructionStatus,
+    dirtLevel,
+    requestedServices,
+    description,
+    preferredDate,
+    visitRequested,
+    estimatedSurface,
+    numberOfLevels,
+  };
+};
+
+const createQuoteRequest = async (rawPayload, files = []) => {
+  const payload = normalizePayload(rawPayload);
   const client = await clientService.findOrCreateClient(payload);
 
   const count = await QuoteRequest.countDocuments();
@@ -39,7 +77,7 @@ const createQuoteRequest = async (payload, files = []) => {
     constructionStatus: payload.constructionStatus,
     dirtLevel: payload.dirtLevel,
     requestedServices: payload.requestedServices || [],
-    otherNeeds: payload.otherNeeds,
+    otherNeeds: payload.otherNeeds || payload.description,
     preferredTiming: payload.preferredTiming,
     preferredDate: payload.preferredDate ? new Date(payload.preferredDate) : null,
     description: payload.description,
@@ -48,12 +86,14 @@ const createQuoteRequest = async (payload, files = []) => {
   });
 
   const htmlClient = `
-    <h2>Demande de devis bien reçue</h2>
-    <p>Bonjour ${client.contactName},</p>
-    <p>Votre demande de devis pour le nettoyage de fin de chantier a bien été enregistrée sous la référence <strong>${reference}</strong>.</p>
-    <p>Notre équipe étudie actuellement vos informations et reviendra vers vous sous 24 à 48h.</p>
-    <br/>
-    <p>L'équipe Baticlean</p>
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
+      <h2 style="color: #195D9B; margin-top: 0;">Confirmation de votre demande de devis Baticlean</h2>
+      <p>Bonjour <strong>${client.contactName}</strong>,</p>
+      <p>Votre demande de devis de nettoyage de fin de chantier a bien été enregistrée sous la référence <strong>${reference}</strong>.</p>
+      <p>Notre équipe commerciale étudie vos informations et vous transmettra une estimation personnalisée sous 24h.</p>
+      <br/>
+      <p>Cordialement,<br/><strong>L'Équipe Baticlean Côte d'Ivoire</strong><br/><a href="https://baticlean.ci" style="color: #195D9B;">www.baticlean.ci</a></p>
+    </div>
   `;
 
   await sendTransactionalEmail({
@@ -64,15 +104,18 @@ const createQuoteRequest = async (payload, files = []) => {
   });
 
   const htmlAdmin = `
-    <h2>Nouvelle demande de devis enregistrée</h2>
-    <p><strong>Référence :</strong> ${reference}</p>
-    <p><strong>Client :</strong> ${client.contactName} (${client.email} - ${client.phone})</p>
-    <p><strong>Bâtiment :</strong> ${payload.buildingType} à ${payload.city}, ${payload.commune}</p>
-    <p>Veuillez consulter votre tableau de bord pour traiter cette demande.</p>
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
+      <h2 style="color: #EF9437; margin-top: 0;">📋 Nouvelle demande de devis reçue</h2>
+      <p><strong>Référence :</strong> ${reference}</p>
+      <p><strong>Client :</strong> ${client.contactName} (${client.email} - ${client.phone})</p>
+      <p><strong>Localisation :</strong> ${payload.city}, ${payload.commune}</p>
+      <p><strong>Bâtiment :</strong> ${payload.buildingType} (${payload.estimatedSurface} m²)</p>
+      <p>Veuillez vous connecter à votre tableau de bord administrateur pour traiter cette demande.</p>
+    </div>
   `;
 
   await sendTransactionalEmail({
-    toEmail: env.ADMIN_NOTIFICATION_EMAIL,
+    toEmail: env.ADMIN_NOTIFICATION_EMAIL || 'baticlean225@gmail.com',
     toName: 'Admin Baticlean',
     subject: `ALERTE : Nouvelle demande de devis [${reference}]`,
     htmlContent: htmlAdmin,
