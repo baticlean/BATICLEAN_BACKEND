@@ -4,6 +4,7 @@ const clientService = require('./clientService');
 const { generateReference } = require('../utils/referenceGenerator');
 const { sendTransactionalEmail } = require('../integrations/brevo');
 const { APPOINTMENT_REASONS } = require('../constants/enums');
+const { generateAppointmentClientEmail, generateAppointmentAdminEmail } = require('../utils/emailTemplates');
 const AppError = require('../utils/appError');
 const { HTTP_STATUS, ERROR_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
@@ -123,35 +124,34 @@ const createAppointment = async (rawPayload) => {
     notes: payload.notes || '',
   });
 
-  const htmlClient = `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
-      <h2 style="color: #195D9B; margin-top: 0;">Confirmation de votre demande de visite Baticlean</h2>
-      <p>Bonjour <strong>${client.contactName}</strong>,</p>
-      <p>Votre rendez-vous a bien été enregistré sous la référence <strong>${reference}</strong> pour le <strong>${payload.dateStr} à ${payload.startTime}</strong>.</p>
-      <p><strong>Lieu de rendez-vous :</strong> ${payload.location}</p>
-      <p>Notre équipe technique vous recontactera 24h avant la visite pour confirmer l'accès au site.</p>
-      <br/>
-      <p>Cordialement,<br/><strong>L'Équipe Baticlean Côte d'Ivoire</strong><br/><a href="https://baticlean.ci" style="color: #195D9B;">www.baticlean.ci</a></p>
-    </div>
-  `;
+  // Modèle d'email client ultra-moderne, sans emoji et sans www.baticlean.ci
+  const htmlClient = generateAppointmentClientEmail({
+    contactName: client.contactName,
+    reference,
+    dateStr: payload.dateStr,
+    startTime: payload.startTime,
+    endTime: payload.endTime,
+    location: payload.location,
+  });
 
   await sendTransactionalEmail({
     toEmail: client.email,
     toName: client.contactName,
-    subject: `Demande de rendez-vous Baticlean [${reference}]`,
+    subject: `Confirmation de votre demande de visite Baticlean [${reference}]`,
     htmlContent: htmlClient,
   });
 
-  const htmlAdmin = `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
-      <h2 style="color: #EF9437; margin-top: 0;">📅 Demande de visite de chantier enregistrée</h2>
-      <p><strong>Référence :</strong> ${reference}</p>
-      <p><strong>Client :</strong> ${client.contactName} (${client.email} - ${client.phone})</p>
-      <p><strong>Date & Créneau :</strong> ${payload.dateStr} de ${payload.startTime} à ${payload.endTime}</p>
-      <p><strong>Lieu :</strong> ${payload.location}</p>
-      <p>Consultez votre tableau de bord administrateur pour valider la visite.</p>
-    </div>
-  `;
+  // Modèle d'email administrateur ultra-moderne sans emoji
+  const htmlAdmin = generateAppointmentAdminEmail({
+    contactName: client.contactName,
+    email: client.email,
+    phone: client.phone,
+    reference,
+    dateStr: payload.dateStr,
+    startTime: payload.startTime,
+    endTime: payload.endTime,
+    location: payload.location,
+  });
 
   await sendTransactionalEmail({
     toEmail: env.ADMIN_NOTIFICATION_EMAIL || 'baticlean225@gmail.com',

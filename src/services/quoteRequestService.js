@@ -4,6 +4,7 @@ const { generateReference } = require('../utils/referenceGenerator');
 const { uploadToCloudinary } = require('../integrations/cloudinary');
 const { sendTransactionalEmail } = require('../integrations/brevo');
 const { CLIENT_TYPES, BUILDING_TYPES, CONSTRUCTION_STATUS, DIRT_LEVELS } = require('../constants/enums');
+const { generateQuoteClientEmail, generateQuoteAdminEmail } = require('../utils/emailTemplates');
 const env = require('../config/env');
 
 const normalizePayload = (raw) => {
@@ -107,16 +108,15 @@ const createQuoteRequest = async (rawPayload, files = []) => {
     visitRequested: payload.visitRequested || false,
   });
 
-  const htmlClient = `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
-      <h2 style="color: #195D9B; margin-top: 0;">Confirmation de votre demande de devis Baticlean</h2>
-      <p>Bonjour <strong>${client.contactName}</strong>,</p>
-      <p>Votre demande de devis de nettoyage de fin de chantier a bien été enregistrée sous la référence <strong>${reference}</strong>.</p>
-      <p>Notre équipe commerciale étudie vos informations et vous transmettra une estimation personnalisée sous 24h.</p>
-      <br/>
-      <p>Cordialement,<br/><strong>L'Équipe Baticlean Côte d'Ivoire</strong><br/><a href="https://baticlean.ci" style="color: #195D9B;">www.baticlean.ci</a></p>
-    </div>
-  `;
+  // Modèle d'email client ultra-moderne, sans emoji et sans www.baticlean.ci
+  const htmlClient = generateQuoteClientEmail({
+    contactName: client.contactName,
+    reference,
+    buildingType: payload.buildingType,
+    estimatedSurface: payload.estimatedSurface,
+    city: payload.city,
+    commune: payload.commune,
+  });
 
   await sendTransactionalEmail({
     toEmail: client.email,
@@ -125,16 +125,17 @@ const createQuoteRequest = async (rawPayload, files = []) => {
     htmlContent: htmlClient,
   });
 
-  const htmlAdmin = `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
-      <h2 style="color: #EF9437; margin-top: 0;">📋 Nouvelle demande de devis reçue</h2>
-      <p><strong>Référence :</strong> ${reference}</p>
-      <p><strong>Client :</strong> ${client.contactName} (${client.email} - ${client.phone})</p>
-      <p><strong>Localisation :</strong> ${payload.city}, ${payload.commune}</p>
-      <p><strong>Bâtiment :</strong> ${payload.buildingType} (${payload.estimatedSurface} m²)</p>
-      <p>Veuillez vous connecter à votre tableau de bord administrateur pour traiter cette demande.</p>
-    </div>
-  `;
+  // Modèle d'email administrateur ultra-moderne sans emoji
+  const htmlAdmin = generateQuoteAdminEmail({
+    contactName: client.contactName,
+    email: client.email,
+    phone: client.phone,
+    reference,
+    buildingType: payload.buildingType,
+    estimatedSurface: payload.estimatedSurface,
+    city: payload.city,
+    commune: payload.commune,
+  });
 
   await sendTransactionalEmail({
     toEmail: env.ADMIN_NOTIFICATION_EMAIL || 'baticlean225@gmail.com',

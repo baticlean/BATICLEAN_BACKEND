@@ -9,6 +9,9 @@ const { HTTP_STATUS, ERROR_CODES } = require('./constants/httpCodes');
 
 const app = express();
 
+// Activer le mode proxy de confiance pour les reverse-proxies Render / Cloudflare
+app.set('trust proxy', 1);
+
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 
