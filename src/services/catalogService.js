@@ -1,77 +1,48 @@
-const Service = require('../models/Service');
+const Services = require('../models/Services');
 const BuildingType = require('../models/BuildingType');
 const Partner = require('../models/Partner');
 const Testimonial = require('../models/Testimonial');
 const Project = require('../models/Project');
-const ProjectMedia = require('../models/ProjectMedia');
 const QuoteRequest = require('../models/QuoteRequest');
 const Appointment = require('../models/Appointment');
 const Settings = require('../models/Settings');
 
 const getPublishedServices = async () => {
-  return await Service.find({ isPublished: true }).sort({ order: 1 }).lean();
+  return await Services.find({ isPublishedPublic: true }).sort({ displayOrder: 1 });
 };
 
 const getServiceBySlug = async (slug) => {
-  return await Service.findOne({ slug, isPublished: true }).lean();
+  return await Services.findOne({ slug, isPublishedPublic: true });
 };
 
 const getPublishedBuildingTypes = async () => {
-  return await BuildingType.find({ isPublished: true }).sort({ order: 1 }).lean();
+  return await BuildingType.find({ isPublishedPublic: true }).sort({ displayOrder: 1 });
 };
 
 const getBuildingTypeBySlug = async (slug) => {
-  return await BuildingType.findOne({ slug, isPublished: true }).lean();
+  return await BuildingType.findOne({ slug, isPublishedPublic: true });
 };
 
 const getPublishedPartners = async () => {
-  return await Partner.find({ isPublished: true }).sort({ order: 1 }).lean();
+  return await Partner.find({ isPublished: true }).sort({ createdAt: -1 });
 };
 
 const getPublishedTestimonials = async () => {
-  return await Testimonial.find({ isPublished: true }).sort({ order: 1 }).lean();
+  return await Testimonial.find({ isPublished: true }).sort({ createdAt: -1 });
 };
 
-const getPublicProjects = async (page = 1, limit = 10, category = null) => {
-  const skip = (page - 1) * limit;
+const getPublicProjects = async (filter = {}) => {
   const query = { isPublishedPublic: true };
-  if (category) {
-    query.buildingType = category;
-  }
+  if (filter.buildingType) query.buildingType = filter.buildingType;
+  if (filter.city) query.city = filter.city;
 
-  const [projects, total] = await Promise.all([
-    Project.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    Project.countDocuments(query),
-  ]);
-
-  const projectIds = projects.map((p) => p._id);
-  const mediaList = await ProjectMedia.find({
-    projectId: { $in: projectIds },
-    isPublished: true,
-  })
-    .sort({ order: 1 })
-    .lean();
-
-  const projectsWithMedia = projects.map((project) => ({
-    ...project,
-    media: mediaList.filter((m) => m.projectId.toString() === project._id.toString()),
-  }));
-
-  return {
-    projects: projectsWithMedia,
-    pagination: {
-      page: Number(page),
-      limit: Number(limit),
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+  return await Project.find(query).sort({ createdAt: -1 });
 };
 
 const getPublicStats = async () => {
   const [completedQuotes, completedAppointments] = await Promise.all([
-    QuoteRequest.countDocuments({ status: { $in: ['COMPLETED', 'LIVRE', 'TERMINATED', 'TERMINE'] } }),
-    Appointment.countDocuments({ status: { $in: ['COMPLETED', 'HONORE', 'TERMINATED', 'TERMINE'] } }),
+    QuoteRequest.countDocuments({ status: 'COMPLETED' }),
+    Appointment.countDocuments({ status: 'COMPLETED' }),
   ]);
 
   return {
@@ -100,14 +71,21 @@ const updateHeroMedia = async (heroMediaData) => {
   if (!settings) {
     settings = new Settings({ key: 'GENERAL' });
   }
+
+  const mediaUrl = (heroMediaData.mediaUrl && heroMediaData.mediaUrl.trim()) 
+    ? heroMediaData.mediaUrl.trim() 
+    : '/logo.png';
+
   settings.heroMedia = {
     mediaType: heroMediaData.mediaType || 'IMAGE',
-    mediaUrl: heroMediaData.mediaUrl || '/logo.png',
+    mediaUrl,
     videoUrl: heroMediaData.videoUrl || '',
     carouselImages: Array.isArray(heroMediaData.carouselImages) && heroMediaData.carouselImages.length > 0
       ? heroMediaData.carouselImages
-      : ['/logo.png'],
+      : [mediaUrl],
   };
+  
+  settings.markModified('heroMedia');
   await settings.save();
   return settings.heroMedia;
 };

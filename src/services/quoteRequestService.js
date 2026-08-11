@@ -3,18 +3,40 @@ const clientService = require('./clientService');
 const { generateReference } = require('../utils/referenceGenerator');
 const { uploadToCloudinary } = require('../integrations/cloudinary');
 const { sendTransactionalEmail } = require('../integrations/brevo');
+const { CLIENT_TYPES, BUILDING_TYPES, CONSTRUCTION_STATUS, DIRT_LEVELS } = require('../constants/enums');
 const env = require('../config/env');
 
 const normalizePayload = (raw) => {
   const contactName = raw.contactName || `${raw.firstName || ''} ${raw.lastName || ''}`.trim() || 'Client Baticlean';
-  const requesterType = raw.requesterType || (raw.clientType === 'PROFESSIONNEL' ? 'COMPANY' : 'INDIVIDUAL');
+  
+  // RequesterType Enum Check
+  let requesterType = raw.requesterType;
+  if (!Object.values(CLIENT_TYPES).includes(requesterType)) {
+    requesterType = raw.clientType === 'PROFESSIONNEL' ? CLIENT_TYPES.COMPANY : CLIENT_TYPES.INDIVIDUAL;
+  }
+
+  // BuildingType Enum Check
+  let buildingType = raw.buildingType;
+  if (!Object.values(BUILDING_TYPES).includes(buildingType)) {
+    buildingType = BUILDING_TYPES.APARTMENT;
+  }
+
+  // ConstructionStatus Enum Check
+  let constructionStatus = raw.constructionStatus;
+  if (!Object.values(CONSTRUCTION_STATUS).includes(constructionStatus)) {
+    constructionStatus = CONSTRUCTION_STATUS.FINISHED;
+  }
+
+  // DirtLevel Enum Check
+  let dirtLevel = raw.dirtLevel;
+  if (!Object.values(DIRT_LEVELS).includes(dirtLevel)) {
+    dirtLevel = DIRT_LEVELS.HEAVY;
+  }
+
   const city = raw.city || 'Abidjan';
   const commune = raw.commune || raw.district || 'Abidjan';
   const neighborhood = raw.neighborhood || raw.locationLandmark || raw.district || 'Abidjan';
   const address = raw.address || raw.district || raw.city || 'Abidjan';
-  const buildingType = raw.buildingType || 'APARTMENT';
-  const constructionStatus = raw.constructionStatus || 'NEW_BUILD';
-  const dirtLevel = raw.dirtLevel || 'HEAVY';
   const requestedServices = raw.requestedServices || raw.servicesRequested || ['NETTOYAGE_FIN_CHANTIER'];
   const description = raw.description || raw.specificNeeds || raw.otherNeeds || '';
   const preferredDate = raw.preferredDate || raw.desiredInterventionDate || null;
