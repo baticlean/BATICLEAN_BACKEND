@@ -1,4 +1,4 @@
-const Services = require('../models/Services');
+const Service = require('../models/Service');
 const BuildingType = require('../models/BuildingType');
 const Partner = require('../models/Partner');
 const Testimonial = require('../models/Testimonial');
@@ -8,11 +8,11 @@ const Appointment = require('../models/Appointment');
 const Settings = require('../models/Settings');
 
 const getPublishedServices = async () => {
-  return await Services.find({ isPublishedPublic: true }).sort({ displayOrder: 1 });
+  return await Service.find({ isPublishedPublic: true }).sort({ displayOrder: 1 });
 };
 
 const getServiceBySlug = async (slug) => {
-  return await Services.findOne({ slug, isPublishedPublic: true });
+  return await Service.findOne({ slug, isPublishedPublic: true });
 };
 
 const getPublishedBuildingTypes = async () => {
@@ -84,7 +84,7 @@ const updateHeroMedia = async (heroMediaData) => {
       ? heroMediaData.carouselImages
       : [mediaUrl],
   };
-  
+
   settings.markModified('heroMedia');
   await settings.save();
   return settings.heroMedia;
