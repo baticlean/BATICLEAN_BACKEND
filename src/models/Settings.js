@@ -40,6 +40,25 @@ const settingsSchema = new mongoose.Schema(
         isActive: { type: Boolean, default: true },
       },
     ],
+    heroMedia: {
+      mediaType: {
+        type: String,
+        enum: ['IMAGE', 'VIDEO', 'CAROUSEL'],
+        default: 'IMAGE',
+      },
+      mediaUrl: {
+        type: String,
+        default: '/logo.png',
+      },
+      videoUrl: {
+        type: String,
+        default: '',
+      },
+      carouselImages: {
+        type: [String],
+        default: ['/logo.png'],
+      },
+    },
   },
   {
     timestamps: true,

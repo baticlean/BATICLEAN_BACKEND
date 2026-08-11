@@ -6,6 +6,7 @@ const Project = require('../models/Project');
 const ProjectMedia = require('../models/ProjectMedia');
 const QuoteRequest = require('../models/QuoteRequest');
 const Appointment = require('../models/Appointment');
+const Settings = require('../models/Settings');
 
 const getPublishedServices = async () => {
   return await Service.find({ isPublished: true }).sort({ order: 1 }).lean();
@@ -80,6 +81,37 @@ const getPublicStats = async () => {
   };
 };
 
+const getHeroMedia = async () => {
+  let settings = await Settings.findOne({ key: 'GENERAL' }).lean();
+  if (!settings) {
+    const created = await Settings.create({ key: 'GENERAL' });
+    settings = created.toObject();
+  }
+  return settings.heroMedia || {
+    mediaType: 'IMAGE',
+    mediaUrl: '/logo.png',
+    videoUrl: '',
+    carouselImages: ['/logo.png'],
+  };
+};
+
+const updateHeroMedia = async (heroMediaData) => {
+  let settings = await Settings.findOne({ key: 'GENERAL' });
+  if (!settings) {
+    settings = new Settings({ key: 'GENERAL' });
+  }
+  settings.heroMedia = {
+    mediaType: heroMediaData.mediaType || 'IMAGE',
+    mediaUrl: heroMediaData.mediaUrl || '/logo.png',
+    videoUrl: heroMediaData.videoUrl || '',
+    carouselImages: Array.isArray(heroMediaData.carouselImages) && heroMediaData.carouselImages.length > 0
+      ? heroMediaData.carouselImages
+      : ['/logo.png'],
+  };
+  await settings.save();
+  return settings.heroMedia;
+};
+
 module.exports = {
   getPublishedServices,
   getServiceBySlug,
@@ -89,4 +121,6 @@ module.exports = {
   getPublishedTestimonials,
   getPublicProjects,
   getPublicStats,
+  getHeroMedia,
+  updateHeroMedia,
 };

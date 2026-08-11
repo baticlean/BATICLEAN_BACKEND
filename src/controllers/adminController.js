@@ -1,4 +1,5 @@
 const adminService = require('../services/adminService');
+const catalogService = require('../services/catalogService');
 const { sendSuccess } = require('../utils/responseHandler');
 
 const getDashboardStats = async (req, res, next) => {
@@ -116,6 +117,15 @@ const deletePartner = async (req, res, next) => {
   }
 };
 
+const updateHeroMedia = async (req, res, next) => {
+  try {
+    const heroMedia = await catalogService.updateHeroMedia(req.body);
+    return sendSuccess(res, heroMedia);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getQuoteRequests,
@@ -129,4 +139,5 @@ module.exports = {
   createPartner,
   togglePartnerPublication,
   deletePartner,
+  updateHeroMedia,
 };

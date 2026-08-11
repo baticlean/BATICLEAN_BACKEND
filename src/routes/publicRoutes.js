@@ -1,5 +1,6 @@
 const express = require('express');
 const catalogController = require('../controllers/catalogController');
+const partnerRequestController = require('../controllers/partnerRequestController');
 
 const router = express.Router();
 
@@ -10,5 +11,11 @@ router.get('/partners', catalogController.getPartners);
 router.get('/testimonials', catalogController.getTestimonials);
 router.get('/projects/public', catalogController.getPublicProjects);
 router.get('/stats', catalogController.getPublicStats);
+
+// Route publique du média Hero (Image/Vidéo/Carrousel)
+router.get('/hero-media', catalogController.getHeroMedia);
+
+// Route publique de demande de partenariat
+router.post('/partner-requests', partnerRequestController.createPartnerRequest);
 
 module.exports = router;

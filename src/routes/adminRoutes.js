@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
+const partnerRequestController = require('../controllers/partnerRequestController');
 const authenticate = require('../middlewares/authMiddleware');
 const authorize = require('../middlewares/roleMiddleware');
 const validate = require('../middlewares/validateMiddleware');
@@ -31,5 +32,12 @@ router.get('/partners', adminController.getPartners);
 router.post('/partners', adminController.createPartner);
 router.patch('/partners/:id/toggle-publish', adminController.togglePartnerPublication);
 router.delete('/partners/:id', adminController.deletePartner);
+
+// Express routes for Partner Requests management
+router.get('/partner-requests', partnerRequestController.getPartnerRequests);
+router.patch('/partner-requests/:id/respond', partnerRequestController.respondToPartnerRequest);
+
+// Express route for Hero Media Settings
+router.put('/hero-media', adminController.updateHeroMedia);
 
 module.exports = router;
