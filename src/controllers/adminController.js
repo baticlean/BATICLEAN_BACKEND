@@ -15,7 +15,7 @@ const getQuoteRequests = async (req, res, next) => {
   try {
     const { page, limit, status, search } = req.query;
     const result = await adminService.getQuoteRequests({ page, limit, status, search });
-    return sendSuccess(res, result.requests, 200, result.pagination);
+    return sendSuccess(res, result);
   } catch (error) {
     return next(error);
   }
