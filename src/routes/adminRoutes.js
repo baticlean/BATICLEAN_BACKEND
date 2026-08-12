@@ -1,6 +1,8 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
 const partnerRequestController = require('../controllers/partnerRequestController');
+const faqController = require('../controllers/faqController');
+const testimonialController = require('../controllers/testimonialController');
 const authenticate = require('../middlewares/authMiddleware');
 const authorize = require('../middlewares/roleMiddleware');
 const validate = require('../middlewares/validateMiddleware');
@@ -36,6 +38,7 @@ router.delete('/projects/:id', adminController.deleteProject);
 // Express routes for Partners management
 router.get('/partners', adminController.getPartners);
 router.post('/partners', adminController.createPartner);
+router.put('/partners/:id', adminController.updatePartner);
 router.patch('/partners/:id/toggle-publish', adminController.togglePartnerPublication);
 router.delete('/partners/:id', adminController.deletePartner);
 
@@ -43,6 +46,19 @@ router.delete('/partners/:id', adminController.deletePartner);
 router.get('/partner-requests', partnerRequestController.getPartnerRequests);
 router.patch('/partner-requests/:id/respond', partnerRequestController.respondToPartnerRequest);
 router.delete('/partner-requests/:id', partnerRequestController.deletePartnerRequest);
+
+// Express routes for FAQ management
+router.get('/faqs', faqController.getAdminFaqs);
+router.post('/faqs', faqController.createFaq);
+router.put('/faqs/:id', faqController.updateFaq);
+router.patch('/faqs/:id/toggle-publish', faqController.toggleFaqPublication);
+router.delete('/faqs/:id', faqController.deleteFaq);
+
+// Express routes for Testimonials / Reviews management
+router.get('/testimonials', testimonialController.getAdminTestimonials);
+router.post('/testimonials', testimonialController.createAdminTestimonial);
+router.patch('/testimonials/:id/status', testimonialController.updateTestimonialStatus);
+router.delete('/testimonials/:id', testimonialController.deleteTestimonial);
 
 // Express route for Hero Media Settings
 router.put('/hero-media', adminController.updateHeroMedia);

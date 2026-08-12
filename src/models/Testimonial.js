@@ -2,35 +2,61 @@ const mongoose = require('mongoose');
 
 const testimonialSchema = new mongoose.Schema(
   {
-    name: {
+    authorName: {
       type: String,
-      required: [true, 'Le nom de l\'auteur est obligatoire.'],
-      trim: true,
-    },
-    role: {
-      type: String,
+      required: true,
       trim: true,
     },
     company: {
       type: String,
       trim: true,
+      default: '',
     },
-    content: {
+    role: {
       type: String,
-      required: [true, 'Le contenu du témoignage est obligatoire.'],
+      trim: true,
+      default: 'Client Baticlean',
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+      default: 5,
+    },
+    title: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    comment: {
+      type: String,
+      required: true,
       trim: true,
     },
-    photoUrl: {
+    buildingType: {
       type: String,
+      trim: true,
+      default: 'Résidentiel / Tertiaire',
     },
-    isPublished: {
-      type: Boolean,
-      default: false,
+    city: {
+      type: String,
+      trim: true,
+      default: 'Abidjan',
+    },
+    logoUrl: {
+      type: String,
+      default: '',
+    },
+    status: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      default: 'PENDING',
       index: true,
     },
-    order: {
-      type: Number,
-      default: 0,
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
   },
   {

@@ -137,6 +137,15 @@ const createPartner = async (req, res, next) => {
   }
 };
 
+const updatePartner = async (req, res, next) => {
+  try {
+    const partner = await adminService.updateAdminPartner(req.params.id, req.body);
+    return sendSuccess(res, partner);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const togglePartnerPublication = async (req, res, next) => {
   try {
     const partner = await adminService.togglePartnerPublication(req.params.id);
@@ -188,6 +197,7 @@ module.exports = {
   deleteProject,
   getPartners,
   createPartner,
+  updatePartner,
   togglePartnerPublication,
   deletePartner,
   updateHeroMedia,

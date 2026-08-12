@@ -381,6 +381,27 @@ const createAdminPartner = async (partnerData) => {
   return created;
 };
 
+const updateAdminPartner = async (partnerId, partnerData) => {
+  const partner = await Partner.findById(partnerId);
+  if (!partner) throw new AppError('Partenaire introuvable', 404);
+
+  if (partnerData.name) partner.name = partnerData.name;
+  if (partnerData.category) partner.category = partnerData.category;
+  if (partnerData.logoUrl !== undefined) partner.logoUrl = partnerData.logoUrl;
+  if (partnerData.description !== undefined) partner.description = partnerData.description;
+  if (partnerData.websiteUrl !== undefined) partner.websiteUrl = partnerData.websiteUrl;
+  if (partnerData.contactPhone !== undefined) partner.contactPhone = partnerData.contactPhone;
+  if (partnerData.contactEmail !== undefined) partner.contactEmail = partnerData.contactEmail;
+  if (partnerData.isPublished !== undefined) partner.isPublished = partnerData.isPublished;
+
+  await partner.save();
+
+  emitEvent('partner_updated', partner);
+  emitEvent('data_updated', { type: 'PARTNER' });
+
+  return partner;
+};
+
 const togglePartnerPublication = async (partnerId) => {
   const partner = await Partner.findById(partnerId);
   if (!partner) throw new AppError('Partenaire introuvable', 404);
@@ -415,6 +436,7 @@ module.exports = {
   deleteAdminProject,
   getAllAdminPartners,
   createAdminPartner,
+  updateAdminPartner,
   togglePartnerPublication,
   deleteAdminPartner,
 };
