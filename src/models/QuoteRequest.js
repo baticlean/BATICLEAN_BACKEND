@@ -85,6 +85,17 @@ const quoteRequestSchema = new mongoose.Schema(
     },
 
     internalNotes: { type: String, trim: true },
+
+    // Champs Devis PDF BTP
+    pdfUrl: { type: String, default: '' },
+    pdfBase64: { type: String, default: '' },
+    pdfStatus: {
+      type: String,
+      enum: ['NONE', 'GENERATED', 'CUSTOM_UPLOADED', 'SENT'],
+      default: 'NONE',
+    },
+    customPriceTotal: { type: Number },
+    sentAt: { type: Date },
   },
   {
     timestamps: true,

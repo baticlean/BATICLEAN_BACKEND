@@ -8,6 +8,9 @@ const Client = require('../models/Client');
 const AuditLog = require('../models/AuditLog');
 const { generateReference } = require('../utils/referenceGenerator');
 const { emitEvent } = require('../config/socket');
+const { generateQuotePdfBuffer } = require('../utils/pdfGenerator');
+const { sendTransactionalEmail } = require('../integrations/brevo');
+const { createBaseEmailTemplate } = require('../utils/emailTemplates');
 const AppError = require('../utils/appError');
 const { HTTP_STATUS, ERROR_CODES } = require('../constants/httpCodes');
 
@@ -122,6 +125,142 @@ const deleteQuoteRequest = async (id) => {
   emitEvent('quote_request_deleted', { id });
   emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
   return deleted;
+};
+
+// --- SERVICES DEVIS PDF BTP ---
+const generateQuotePdf = async (id) => {
+  const request = await QuoteRequest.findById(id).populate('clientId', 'contactName companyName email phone').lean();
+  if (!request) {
+    throw new AppError('Demande introuvable.', HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESOURCE_NOT_FOUND);
+  }
+
+  const pdfBuffer = await generateQuotePdfBuffer(request);
+  const pdfBase64 = pdfBuffer.toString('base64');
+  const filename = `Devis_Baticlean_${request.reference || 'DEV'}.pdf`;
+
+  await QuoteRequest.findByIdAndUpdate(id, {
+    pdfBase64,
+    pdfStatus: 'GENERATED',
+  });
+
+  emitEvent('quote_request_updated', { id, pdfStatus: 'GENERATED' });
+  emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
+
+  return {
+    reference: request.reference,
+    filename,
+    pdfBase64,
+    pdfStatus: 'GENERATED',
+  };
+};
+
+const uploadCustomQuotePdf = async (id, customPdfBase64) => {
+  const request = await QuoteRequest.findById(id);
+  if (!request) {
+    throw new AppError('Demande introuvable.', HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESOURCE_NOT_FOUND);
+  }
+
+  request.pdfBase64 = customPdfBase64;
+  request.pdfStatus = 'CUSTOM_UPLOADED';
+  await request.save();
+
+  emitEvent('quote_request_updated', { id, pdfStatus: 'CUSTOM_UPLOADED' });
+  emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
+
+  return {
+    reference: request.reference,
+    pdfStatus: 'CUSTOM_UPLOADED',
+  };
+};
+
+const sendQuotePdfToClient = async (id, customNotes) => {
+  const request = await QuoteRequest.findById(id).populate('clientId', 'contactName companyName email phone');
+  if (!request) {
+    throw new AppError('Demande introuvable.', HTTP_STATUS.NOT_FOUND, ERROR_CODES.RESOURCE_NOT_FOUND);
+  }
+
+  let pdfBase64 = request.pdfBase64;
+  if (!pdfBase64) {
+    const pdfBuffer = await generateQuotePdfBuffer(request.toObject());
+    pdfBase64 = pdfBuffer.toString('base64');
+    request.pdfBase64 = pdfBase64;
+  }
+
+  const clientName = `${request.firstName || ''} ${request.lastName || ''}`.trim() || request.clientId?.contactName || 'Client';
+  const clientEmail = request.email || request.clientId?.email;
+
+  if (!clientEmail) {
+    throw new AppError('Adresse email du client introuvable.', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const filename = `Devis_Baticlean_${request.reference}.pdf`;
+  const emailSubject = `[BATICLEAN] Votre Devis Officiel de Remise en État [${request.reference}]`;
+
+  const emailHtml = createBaseEmailTemplate({
+    title: emailSubject,
+    preheader: `Votre devis officiel Baticlean ${request.reference} est disponible en pièce jointe`,
+    contentHtml: `
+      <h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 800; color: #0F172A;">Votre Devis Officiel est Prêt !</h1>
+      <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155; line-height: 1.6;">
+        Bonjour <strong>${clientName}</strong>,
+      </p>
+      <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155; line-height: 1.6;">
+        Suite à votre demande concernant le nettoyage et la remise en état de votre bâtiment <strong>${request.buildingType}</strong> (${request.estimatedSurface || 0} m² à ${request.city}), nous avons le plaisir de vous transmettre votre devis officiel en pièce jointe (PDF).
+      </p>
+      
+      ${
+        customNotes
+          ? `<div style="background-color: #F8FAFC; padding: 16px; border-left: 4px solid #195D9B; border-radius: 8px; margin: 20px 0;">
+               <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: #475569;">Note de notre direction technique :</p>
+               <p style="margin: 0; font-size: 13px; color: #0F172A; line-height: 1.5;">"${customNotes}"</p>
+             </div>`
+          : ''
+      }
+
+      <div style="background-color: #EBF4FC; padding: 16px; border-radius: 12px; border: 1px solid #ADD1F3; margin-bottom: 24px;">
+        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #195D9B;">Résumé de la proposition :</p>
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #0F172A;">• Référence : <strong>${request.reference}</strong></p>
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #0F172A;">• Type de structure : <strong>${request.buildingType}</strong> (${request.estimatedSurface || 0} m²)</p>
+        <p style="margin: 0; font-size: 13px; color: #0F172A;">• Validité du devis : <strong>30 jours</strong></p>
+      </div>
+
+      <p style="margin: 0 0 20px 0; font-size: 13px; color: #475569; line-height: 1.6;">
+        Pour valider ce devis et planifier la date d'intervention de nos équipes, il vous suffit de répondre directement à cet email ou de nous contacter au <strong>+225 07 68 38 87 79</strong>.
+      </p>
+
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
+        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">L'Équipe commerciale Baticlean CI</p>
+      </div>
+    `,
+  });
+
+  await sendTransactionalEmail({
+    toEmail: clientEmail,
+    toName: clientName,
+    subject: emailSubject,
+    htmlContent: emailHtml,
+    attachments: [
+      {
+        name: filename,
+        content: pdfBase64,
+      },
+    ],
+  });
+
+  request.status = 'ACCEPTED';
+  request.pdfStatus = 'SENT';
+  request.sentAt = new Date();
+  await request.save();
+
+  emitEvent('quote_request_updated', { id, status: 'ACCEPTED', pdfStatus: 'SENT' });
+  emitEvent('data_updated', { type: 'QUOTE_REQUEST' });
+
+  return {
+    success: true,
+    reference: request.reference,
+    sentTo: clientEmail,
+    sentAt: request.sentAt,
+  };
 };
 
 const convertToProject = async (quoteRequestId, userId) => {
@@ -266,6 +405,9 @@ module.exports = {
   getQuoteRequests,
   updateQuoteRequestStatus,
   deleteQuoteRequest,
+  generateQuotePdf,
+  uploadCustomQuotePdf,
+  sendQuotePdfToClient,
   convertToProject,
   getAllAdminProjects,
   createAdminProject,

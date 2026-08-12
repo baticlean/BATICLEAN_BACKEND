@@ -22,6 +22,11 @@ router.patch(
 router.delete('/quote-requests/:id', adminController.deleteQuoteRequest);
 router.post('/quote-requests/:id/convert-project', adminController.convertToProject);
 
+// Routes Devis PDF BTP
+router.post('/quote-requests/:id/pdf/generate', adminController.generateQuotePdf);
+router.post('/quote-requests/:id/pdf/upload', adminController.uploadCustomQuotePdf);
+router.post('/quote-requests/:id/pdf/send', adminController.sendQuotePdfToClient);
+
 // Express routes for Projects management
 router.get('/projects', adminController.getProjects);
 router.post('/projects', adminController.createProject);
@@ -41,5 +46,8 @@ router.delete('/partner-requests/:id', partnerRequestController.deletePartnerReq
 
 // Express route for Hero Media Settings
 router.put('/hero-media', adminController.updateHeroMedia);
+
+// Express route for Company Settings (Contact & Opening Hours)
+router.put('/company-settings', adminController.updateCompanySettings);
 
 module.exports = router;

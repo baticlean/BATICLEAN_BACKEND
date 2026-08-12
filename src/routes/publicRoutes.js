@@ -15,6 +15,9 @@ router.get('/stats', catalogController.getPublicStats);
 // Route publique du média Hero (Image/Vidéo/Carrousel)
 router.get('/hero-media', catalogController.getHeroMedia);
 
+// Route publique des coordonnées et horaires de la société
+router.get('/company-settings', catalogController.getCompanySettings);
+
 // Route publique de demande de partenariat
 router.post('/partner-requests', partnerRequestController.createPartnerRequest);
 

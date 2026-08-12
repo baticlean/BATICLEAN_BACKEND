@@ -45,6 +45,35 @@ const deleteQuoteRequest = async (req, res, next) => {
   }
 };
 
+const generateQuotePdf = async (req, res, next) => {
+  try {
+    const pdfData = await adminService.generateQuotePdf(req.params.id);
+    return sendSuccess(res, pdfData);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const uploadCustomQuotePdf = async (req, res, next) => {
+  try {
+    const { customPdfBase64 } = req.body;
+    const result = await adminService.uploadCustomQuotePdf(req.params.id, customPdfBase64);
+    return sendSuccess(res, result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const sendQuotePdfToClient = async (req, res, next) => {
+  try {
+    const { customNotes } = req.body;
+    const result = await adminService.sendQuotePdfToClient(req.params.id, customNotes);
+    return sendSuccess(res, result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const convertToProject = async (req, res, next) => {
   try {
     const project = await adminService.convertToProject(req.params.id, req.user._id);
@@ -135,11 +164,23 @@ const updateHeroMedia = async (req, res, next) => {
   }
 };
 
+const updateCompanySettings = async (req, res, next) => {
+  try {
+    const updated = await catalogService.updateCompanySettings(req.body);
+    return sendSuccess(res, updated);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getQuoteRequests,
   updateQuoteRequestStatus,
   deleteQuoteRequest,
+  generateQuotePdf,
+  uploadCustomQuotePdf,
+  sendQuotePdfToClient,
   convertToProject,
   getProjects,
   createProject,
@@ -150,4 +191,5 @@ module.exports = {
   togglePartnerPublication,
   deletePartner,
   updateHeroMedia,
+  updateCompanySettings,
 };

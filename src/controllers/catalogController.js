@@ -78,6 +78,15 @@ const getHeroMedia = async (req, res, next) => {
   }
 };
 
+const getCompanySettings = async (req, res, next) => {
+  try {
+    const companySettings = await catalogService.getCompanySettings();
+    return sendSuccess(res, companySettings);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getServices,
   getServiceBySlug,
@@ -87,4 +96,5 @@ module.exports = {
   getPublicProjects,
   getPublicStats,
   getHeroMedia,
+  getCompanySettings,
 };
