@@ -1,13 +1,25 @@
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
+const Settings = require('../models/Settings');
 
 /**
  * Génère un document PDF vectoriel de Devis BTP Officiel Baticlean
  * @param {Object} quoteRequest Objet de la demande de devis MongoDB
  * @returns {Promise<Buffer>} Buffer du fichier PDF généré
  */
-const generateQuotePdfBuffer = (quoteRequest) => {
+const generateQuotePdfBuffer = async (quoteRequest) => {
+  let settings = await Settings.findOne({ key: 'GENERAL' }).lean();
+  if (!settings) {
+    settings = {
+      officialAddress: "Abidjan, Côte d'Ivoire - Cocody Angré 8ème Tranche",
+      officialPhone: '+225 07 68 38 87 79',
+      phoneSecondary: '+225 01 02 03 04 05',
+      officialEmail: 'contact@baticlean.ci',
+      emailDevis: 'devis@baticlean.ci',
+    };
+  }
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 40, size: 'A4' });
@@ -42,12 +54,15 @@ const generateQuotePdfBuffer = (quoteRequest) => {
         .font('Helvetica-Bold')
         .text('SPÉCIALISTE DU NETTOYAGE APRÈS CONSTRUCTION & FIN DE CHANTIER', 105, 60);
 
+      const addressText = settings.officialAddress || "Abidjan, Côte d'Ivoire - Cocody Angré";
+      const phoneText = `Tél: ${settings.officialPhone || ''} ${settings.phoneSecondary ? '/ ' + settings.phoneSecondary : ''} • Email: ${settings.emailDevis || settings.officialEmail || ''}`;
+
       doc
         .fillColor(grayColor)
         .fontSize(8)
         .font('Helvetica')
-        .text('Abidjan, Côte d\'Ivoire • Cocody Angré 8ème Tranche', 105, 72)
-        .text('Tél: +225 07 68 38 87 79 / +225 01 02 03 04 05 • Email: devis@baticlean.ci', 105, 84);
+        .text(addressText, 105, 72)
+        .text(phoneText, 105, 84);
 
       doc
         .moveTo(40, 102)

@@ -3,10 +3,12 @@ const catalogController = require('../controllers/catalogController');
 const partnerRequestController = require('../controllers/partnerRequestController');
 const faqController = require('../controllers/faqController');
 const testimonialController = require('../controllers/testimonialController');
+const serviceController = require('../controllers/serviceController');
 
 const router = express.Router();
 
-router.get('/services', catalogController.getServices);
+// Route publique des services & prestations
+router.get('/services', serviceController.getPublicServices);
 router.get('/services/:slug', catalogController.getServiceBySlug);
 router.get('/building-types', catalogController.getBuildingTypes);
 router.get('/partners', catalogController.getPartners);

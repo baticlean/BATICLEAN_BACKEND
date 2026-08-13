@@ -13,9 +13,13 @@ const serviceSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    category: {
+      type: String,
+      default: 'Prestation BTP',
+      trim: true,
+    },
     shortDescription: {
       type: String,
-      required: true,
       trim: true,
     },
     description: {
@@ -24,11 +28,15 @@ const serviceSchema = new mongoose.Schema(
       trim: true,
     },
     features: [{ type: String }],
+    highlight: {
+      type: String,
+      trim: true,
+    },
     imageUrl: { type: String },
     seoTitle: { type: String, trim: true },
     seoDescription: { type: String, trim: true },
     isPublished: { type: Boolean, default: true, index: true },
-    order: { type: Number, default: 0 },
+    displayOrder: { type: Number, default: 0 },
   },
   {
     timestamps: true,

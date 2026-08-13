@@ -3,6 +3,7 @@ const adminController = require('../controllers/adminController');
 const partnerRequestController = require('../controllers/partnerRequestController');
 const faqController = require('../controllers/faqController');
 const testimonialController = require('../controllers/testimonialController');
+const serviceController = require('../controllers/serviceController');
 const authenticate = require('../middlewares/authMiddleware');
 const authorize = require('../middlewares/roleMiddleware');
 const validate = require('../middlewares/validateMiddleware');
@@ -28,6 +29,13 @@ router.post('/quote-requests/:id/convert-project', adminController.convertToProj
 router.post('/quote-requests/:id/pdf/generate', adminController.generateQuotePdf);
 router.post('/quote-requests/:id/pdf/upload', adminController.uploadCustomQuotePdf);
 router.post('/quote-requests/:id/pdf/send', adminController.sendQuotePdfToClient);
+
+// Express routes for Services Catalog management
+router.get('/services', serviceController.getAdminServices);
+router.post('/services', serviceController.createService);
+router.put('/services/:id', serviceController.updateService);
+router.patch('/services/:id/toggle-publish', serviceController.toggleServicePublication);
+router.delete('/services/:id', serviceController.deleteService);
 
 // Express routes for Projects management
 router.get('/projects', adminController.getProjects);
