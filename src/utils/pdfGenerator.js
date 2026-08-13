@@ -4,6 +4,16 @@ const fs = require('fs');
 const Settings = require('../models/Settings');
 
 /**
+ * Formate un nombre en montant FCFA propre avec espaces standards (évite le bug des slashs / du non-breaking space de toLocaleString dans PDFKit)
+ * @param {number} val
+ * @returns {string}
+ */
+const formatAmount = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return '0';
+  return Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
+/**
  * Génère un document PDF vectoriel de Devis BTP Officiel Baticlean
  * @param {Object} quoteRequest Objet de la demande de devis MongoDB
  * @returns {Promise<Buffer>} Buffer du fichier PDF généré
@@ -36,17 +46,30 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
       const lightBg = '#F8FAFC';
 
       // 1. EN-TÊTE / HEADER
-      // Logo si présent
-      const logoPath = path.join(__dirname, '../../../BATICLEAN/public/logo.png');
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 40, 35, { width: 55 });
+      // Logo officiel
+      const logoPathBackend = path.join(__dirname, '../assets/logo.png');
+      const logoPathFrontendPublic = path.join(__dirname, '../../../BATICLEAN/public/logo.png');
+      const logoPathFrontendRoot = path.join(__dirname, '../../../BATICLEAN/logo.png');
+
+      let logoPathToUse = null;
+      if (fs.existsSync(logoPathBackend)) {
+        logoPathToUse = logoPathBackend;
+      } else if (fs.existsSync(logoPathFrontendPublic)) {
+        logoPathToUse = logoPathFrontendPublic;
+      } else if (fs.existsSync(logoPathFrontendRoot)) {
+        logoPathToUse = logoPathFrontendRoot;
       }
 
+      if (logoPathToUse) {
+        doc.image(logoPathToUse, 40, 32, { width: 55 });
+      }
+
+      // Nom officiel de la société : BATICLEAN
       doc
         .fillColor(primaryColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text('BATICLEAN CÔTE D\'IVOIRE', 105, 35);
+        .text('BATICLEAN', 105, 35);
 
       doc
         .fillColor(secondaryColor)
@@ -54,8 +77,9 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .font('Helvetica-Bold')
         .text('SPÉCIALISTE DU NETTOYAGE APRÈS CONSTRUCTION & FIN DE CHANTIER', 105, 60);
 
-      const addressText = settings.officialAddress || "Abidjan, Côte d'Ivoire - Cocody Angré";
-      const phoneText = `Tél: ${settings.officialPhone || ''} ${settings.phoneSecondary ? '/ ' + settings.phoneSecondary : ''} • Email: ${settings.emailDevis || settings.officialEmail || ''}`;
+      // Coordonnées de contact dynamiques issues de la base de données MongoDB
+      const addressText = settings.officialAddress || "Abidjan, Côte d'Ivoire - Cocody Angré 8ème Tranche";
+      const phoneText = `Tél: ${settings.officialPhone || '+225 07 68 38 87 79'} ${settings.phoneSecondary ? '/ ' + settings.phoneSecondary : ''} • Email: ${settings.emailDevis || settings.officialEmail || 'devis@baticlean.ci'}`;
 
       doc
         .fillColor(grayColor)
@@ -139,7 +163,7 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .stroke();
 
       const surface = quoteRequest.estimatedSurface || 100;
-      const buildingType = quoteRequest.buildingType || 'Résidentiel / Tertiaire';
+      const buildingType = (quoteRequest.buildingType || 'Résidentiel / Tertiaire').toUpperCase();
 
       doc
         .fillColor(primaryColor)
@@ -160,9 +184,9 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .fontSize(9)
         .font('Helvetica-Bold')
         .text('DÉSIGNATION DES PRESTATIONS DE REMISE EN ÉTAT', 50, startY + 6)
-        .text('SURFACE', 380, startY + 6)
-        .text('P.U. (FCFA)', 440, startY + 6)
-        .text('TOTAL HT', 500, startY + 6);
+        .text('SURFACE', 370, startY + 6)
+        .text('P.U. (FCFA)', 430, startY + 6)
+        .text('TOTAL HT', 495, startY + 6);
 
       // Détermination du tarif unitaire selon la superficie (moyenne BTP 1 200 à 2 000 FCFA/m²)
       const unitPrice = surface >= 500 ? 1200 : surface >= 200 ? 1500 : 1800;
@@ -175,29 +199,29 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
           title: 'Lot 1 : Dépoussiérage Haute Efficacité',
           desc: 'Aspiration industrielle, nettoyage des plafonds, murs, gaines et menuiseries.',
           surface: `${surface} m²`,
-          unit: `${Math.round(unitPrice * 0.35).toLocaleString('fr-FR')}`,
-          total: `${Math.round(totalHT * 0.35).toLocaleString('fr-FR')} FCFA`,
+          unit: formatAmount(unitPrice * 0.35),
+          total: `${formatAmount(totalHT * 0.35)} FCFA`,
         },
         {
           title: 'Lot 2 : Décapage & Traitement des Sols',
           desc: 'Décapage monobrosse des carrelages, marbres, résines et élimination des laitance ciment.',
           surface: `${surface} m²`,
-          unit: `${Math.round(unitPrice * 0.35).toLocaleString('fr-FR')}`,
-          total: `${Math.round(totalHT * 0.35).toLocaleString('fr-FR')} FCFA`,
+          unit: formatAmount(unitPrice * 0.35),
+          total: `${formatAmount(totalHT * 0.35)} FCFA`,
         },
         {
           title: 'Lot 3 : Nettoyage Intégral Vitreries & Châssis',
           desc: 'Lavage des vitres, grattage des peintures/silicone, nettoyage des encadrements et rails.',
           surface: 'Forfait',
           unit: '-',
-          total: `${Math.round(totalHT * 0.15).toLocaleString('fr-FR')} FCFA`,
+          total: `${formatAmount(totalHT * 0.15)} FCFA`,
         },
         {
           title: 'Lot 4 : Finitions & Remise des Clés sans Réserve',
           desc: 'Désinfection des sanitaires, astiquage des robinetteries et évacuation des résidus fins.',
           surface: 'Forfait',
           unit: '-',
-          total: `${Math.round(totalHT * 0.15).toLocaleString('fr-FR')} FCFA`,
+          total: `${formatAmount(totalHT * 0.15)} FCFA`,
         },
       ];
 
@@ -216,16 +240,16 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
           .fillColor(grayColor)
           .fontSize(7.5)
           .font('Helvetica')
-          .text(item.desc, 50, currentY + 20, { width: 320 });
+          .text(item.desc, 50, currentY + 20, { width: 310 });
 
         doc
           .fillColor(darkColor)
           .fontSize(8.5)
           .font('Helvetica')
-          .text(item.surface, 380, currentY + 14)
-          .text(item.unit, 440, currentY + 14)
+          .text(item.surface, 370, currentY + 14)
+          .text(item.unit, 430, currentY + 14)
           .font('Helvetica-Bold')
-          .text(item.total, 490, currentY + 14);
+          .text(item.total, 485, currentY + 14);
 
         currentY += 38;
       });
@@ -233,7 +257,7 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
       // 5. RÉCAPITULATIF FINANCIER
       const summaryY = currentY + 15;
       doc
-        .rect(330, summaryY, 225, 80)
+        .rect(320, summaryY, 235, 80)
         .fillColor(lightBg)
         .fill()
         .strokeColor('#CBD5E1')
@@ -243,15 +267,18 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .fillColor(darkColor)
         .fontSize(9)
         .font('Helvetica')
-        .text('Total Hors Taxes (HT) :', 340, summaryY + 10)
-        .text(`${totalHT.toLocaleString('fr-FR')} FCFA`, 460, summaryY + 10, { align: 'right' });
+        .text('Total Hors Taxes (HT) :', 330, summaryY + 10)
+        .font('Helvetica-Bold')
+        .text(`${formatAmount(totalHT)} FCFA`, 445, summaryY + 10, { align: 'right', width: 100 });
 
       doc
-        .text('TVA (18%) :', 340, summaryY + 28)
-        .text(`${tva.toLocaleString('fr-FR')} FCFA`, 460, summaryY + 28, { align: 'right' });
+        .font('Helvetica')
+        .text('TVA (18%) :', 330, summaryY + 28)
+        .font('Helvetica-Bold')
+        .text(`${formatAmount(tva)} FCFA`, 445, summaryY + 28, { align: 'right', width: 100 });
 
       doc
-        .rect(330, summaryY + 48, 225, 32)
+        .rect(320, summaryY + 48, 235, 32)
         .fillColor(primaryColor)
         .fill();
 
@@ -259,8 +286,8 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .fillColor('#FFFFFF')
         .fontSize(10)
         .font('Helvetica-Bold')
-        .text('NET À PAYER (TTC) :', 340, summaryY + 58)
-        .text(`${totalTTC.toLocaleString('fr-FR')} FCFA`, 450, summaryY + 58, { align: 'right' });
+        .text('NET À PAYER (TTC) :', 330, summaryY + 58)
+        .text(`${formatAmount(totalTTC)} FCFA`, 440, summaryY + 58, { align: 'right', width: 105 });
 
       // 6. CONDITIONS DE RÈGLEMENT ET CACHET OFFICIEL
       doc
@@ -276,7 +303,7 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .text('• Acompte de 50% exigé à la validation de la commande.', 40, summaryY + 25)
         .text('• Solde de 50% payable le jour de la réception des travaux sans réserve.', 40, summaryY + 37)
         .text('• Matériel certifié, mono-brosses et EPI conformes aux normes HSE BTP.', 40, summaryY + 49)
-        .text('• Règlement par virement bancaire ou chèque à l\'ordre de BATICLEAN CI.', 40, summaryY + 61);
+        .text('• Règlement par virement bancaire ou chèque à l\'ordre de BATICLEAN.', 40, summaryY + 61);
 
       // Cachet & Signature (Bas Droite)
       const footerY = summaryY + 100;
@@ -284,28 +311,21 @@ const generateQuotePdfBuffer = async (quoteRequest) => {
         .fillColor(primaryColor)
         .fontSize(9)
         .font('Helvetica-Bold')
-        .text('POUR BATICLEAN CÔTE D\'IVOIRE', 360, footerY);
+        .text('POUR BATICLEAN', 380, footerY);
 
       doc
         .fillColor(grayColor)
         .fontSize(8)
         .font('Helvetica-Oblique')
-        .text('La Direction Générale - Cachet & Signature', 360, footerY + 14);
+        .text('La Direction Générale - Cachet & Signature', 380, footerY + 14);
 
-      // Ligne décorative de bas de page
+      // Zone réservée pour le cachet et la signature officielle
       doc
-        .rect(360, footerY + 30, 180, 45)
+        .rect(380, footerY + 30, 165, 45)
         .strokeColor(secondaryColor)
         .lineWidth(1)
         .dash(3, { space: 3 })
         .stroke();
-
-      doc
-        .undash()
-        .fillColor(secondaryColor)
-        .fontSize(8)
-        .font('Helvetica-Bold')
-        .text('DOCUMENT OFFICIEL BATICLEAN', 370, footerY + 47);
 
       doc.end();
     } catch (err) {
