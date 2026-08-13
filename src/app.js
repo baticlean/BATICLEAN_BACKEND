@@ -4,6 +4,7 @@ const { helmetMiddleware, corsMiddleware, sanitizeNoSql } = require('./middlewar
 const { globalLimiter } = require('./middlewares/rateLimiterMiddleware');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const routes = require('./routes');
+const authRoutes = require('./routes/authRoutes');
 const AppError = require('./utils/appError');
 const { HTTP_STATUS, ERROR_CODES } = require('./constants/httpCodes');
 
@@ -43,17 +44,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.use('/admin*', (req, res, next) => {
-  return res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: 'Ressource non trouvée.',
-    },
-  });
-});
-
+// Alias directs pour garantir qu'aucune requête d'authentification ou d'API ne soit bloquée
+app.use('/auth', authRoutes);
 app.use('/api/v1', routes);
+app.use('/api', routes);
 
 app.use('*', (req, res, next) => {
   next(

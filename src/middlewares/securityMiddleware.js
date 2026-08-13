@@ -3,14 +3,19 @@ const cors = require('cors');
 const env = require('../config/env');
 
 const helmetMiddleware = helmet({
-  contentSecurityPolicy: env.NODE_ENV === 'production',
-  crossOriginEmbedderPolicy: env.NODE_ENV === 'production',
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
 });
 
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV === 'development') {
+    const allowedOrigins = (env.CORS_ORIGIN || '').split(',').map((o) => o.trim());
+    
+    // Autoriser les requêtes sans origin (mobile apps, Postman), les origins dans la liste, tous les domaines vercel.app et le dev
+    const isVercelDomain = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
+    const isAllowed = !origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*') || isVercelDomain || env.NODE_ENV === 'development';
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error("Accès refusé par la politique de sécurité CORS."));
